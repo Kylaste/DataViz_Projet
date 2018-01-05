@@ -13,11 +13,29 @@ with open("regularite-mensuelle-tgv.csv", "r") as fichier:
         fileWriter.writerow(
             ["source", "target", "weight", "annee", "mois", "commentaire"])
         compteur = 0
+        moyenne = {}
+        nbMois = {}
         for row in cr:
-            if( compteur > 0):
-                datetime_object = datetime.strptime(row[0], '%Y-%m')
-                fileWriter.writerow([row[2], row[3], row[8], datetime_object.year, datetime_object.month, row[9]])
-            compteur = compteur + 1
+                if( compteur > 0):
+                    datetime_object = datetime.strptime(row[0], '%Y-%m')
+                    id = row[2]+"-"+row[3]+"-"+str(datetime_object.year)
+                    
+                    if(row[8] != ""):
+                        if( id in moyenne):
+                            moyenne[id] += float(row[8])
+                            nbMois[id] += 1
+                        else:
+                            moyenne[id] = float(row[8])
+                            nbMois[id] = 1
+                    fileWriter.writerow([row[2], row[3], row[8], datetime_object.year, datetime_object.month, row[9]])
+                compteur = compteur + 1
+        for row in moyenne:
+            
+            info = row.split('-')
+            if ("ANGERS" in row):
+                print (info[0])
+            moyenne[row] =round(float(moyenne[row])/nbMois[id], 2)
+            fileWriter.writerow([info[0], info[1], moyenne[row], info[2], 0, ""])
             
 # Intercité: index_villes
 with open("regularite-mensuelle-intercites.csv", "r") as fichier:

@@ -42,11 +42,26 @@ path.domain {
   fill: none;
   stroke: black;
 }
+  
+.hidden {
+	display: none;
+}
+  
+div.tooltip {
+	color: #222;
+	background-color: #fff;
+	padding: .5em;
+	text-shadow: #f5f5f5 0 1px 0;
+	border-radius: 2px;
+	opacity: 0.9;
+	position: absolute;
+}
+
 </style>
-<body onload="adjacency()">
+<body onload="visualisation()">
   <div>
   <input id="slider" type="range" value="2011" min="2011" max="2017" step="1" />
-  <span id="annee">année</span>
+  <span id="annee">2011</span>
 </div>
 <div id="vizcontainer">
   <svg width="1750" height="1000" border="1px lightgray solid" />
@@ -54,81 +69,35 @@ path.domain {
   <footer>
 <script>
   
-  //Matrice d'adjacence
-  function adjacency() {
+  
+function visualisation() {
 
+    //Matrice d'adjacence
     queue()
     .defer(d3.csv, "data/index.csv")
     .defer(d3.csv, "data/trajets_tgv.csv")
     .await(function(error, file1, file2) { createAdjacencyMatrix(file1, file2); });
-    
-    function createAdjacencyMatrix(nodes,edges){
       
-      var annee = 2011,
-            source, target, cellule;
-      
+		function createAdjacencyMatrix(nodes,edges){
+			
+			var annee = 2011, source, target;
       var edgeHash = {};
-      for (x in edges) {
-        var id = edges[x].source + "-" + edges[x].target;
-        edgeHash[id] = edges[x];
-      }
-      matrix = [];
-      //create all possible edges
-      for (a in nodes) {
-        for (b in nodes) {
-          var grid = {id: nodes[a].id + "-" + nodes[b].id, x: b, y: a, weight: 0};
-          if (edgeHash[grid.id]) {
-            grid.weight = edgeHash[grid.id].weight;
-          }
-          matrix.push(grid);
-        }
-      }
-
+      
+			var tooltip = d3.select('body').append('div')
+           					.attr('class', 'hidden tooltip');
+      
       var weightScale = d3.scaleLinear()
         .domain(d3.extent(function(d){ return d.weight }))
-        .range([0,100])
+        .range([0,100]);
       
-      //dessin de la matrice
-      d3.select("svg")
-      	.append("g")
-      	.attr("transform", "translate(220,220)")
-      	.attr("id", "adjacencyG")
-      	.selectAll("rect")
-      	.data(matrix)
-    		.enter()
-      	.append("rect")
-      	.attr("width", 15)
-      	.attr("height", 15)
-      	.attr("x", function (d) {return d.x*15})
-      	.attr("y", function (d) {return d.y*15})
-      	.style("stroke", "black")
-      	.style("stroke-width", "1px")
-      	.style("fill", "steelblue")
-      	.style("fill-opacity", function (d) {return d.weight*0.04; })
-      	.on("click", gridOver)
-    		.append("svg:title")
-        .text(function(d, i) { return d.weight + " %"; });
-      
-      // Axes de la Matrice
-      var scaleSize = nodes.length*15;
+  		var scaleSize = nodes.length*15;
       var nameScale = d3.scaleBand()
       									.domain(nodes.map(function (el) {return el.id}))
       									.rangeRound([0,scaleSize]);
   
-      xAxis = d3.axisTop(nameScale).tickSize(4);
-      yAxis = d3.axisLeft(nameScale).tickSize(4);    
+      var xAxis = d3.axisTop(nameScale).tickSize(4);
+      var yAxis = d3.axisLeft(nameScale).tickSize(4);  
       
-      d3.select("#adjacencyG").append("g")
-        .call(xAxis)
-      	.selectAll("text")
-        .style("text-anchor", "end")
-        .attr("transform", "translate(-10,-10) rotate(90)");
-
-      d3.select("#adjacencyG").append("g")
-        .call(yAxis);
-      
-      
-      // Cadre de l'Histogramme
       var svg = d3.select("svg"),
             margin = {top: 220, right: 20, bottom: 300, left: 1000},
             width = +svg.attr("width") - margin.left - margin.right,
@@ -136,23 +105,30 @@ path.domain {
             g = svg.append("g").attr("transform",
                                        "translate(" + margin.left + "," +
                                                         margin.top + ")");
-      var x = d3.scaleLinear()
+      var xScale = d3.scaleLinear()
             .domain([0,12])
-            .rangeRound([0, width]);
+            .rangeRound([0, width]);    
       
-      var name = d3.scaleBand()
-                   .domain(["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin",
-                            "Juillet", "Aout", "Septembre", "Octobre", "Novembre",
-                            "Decembre"])
-                    .rangeRound([0,width]);
-
-       xAxis = d3.axisBottom(name).tickSize(4);
-      
-       var y = d3.scaleLinear()
+      var y = d3.scaleLinear()
                   .domain([0, d3.max(edges, function(d) {
                     			return d.weight; })])
                   .range([height, 0]);
-   
+      
+      drawMatrice();
+      
+      var name = d3.scaleBand()
+                   .domain(["Janvier", "Fevrier", "Mars", "Avril", "Mai",
+                            "Juin", "Juillet", "Aout", "Septembre",
+                            "Octobre", "Novembre", "Decembre"])
+                    .rangeRound([0,width]);
+      
+      xAxis = d3.axisBottom(name).tickSize(4);
+      
+      g.append("g")
+          .attr("class", "axis axis--x")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+      
       g.append("g")
        .attr("fill","white")
         .call(d3.axisLeft(y))
@@ -160,13 +136,9 @@ path.domain {
         .attr("transform", "translate(20,0)")
         .style("text-anchor", "start") 
         .attr("fill","Black")
-        .text("régularité");
-        
+        .text("régularité");  
       
-      g.append("g")
-          .attr("class", "axis axis--x")
-          .attr("transform", "translate(0," + height + ")")
-          .call(xAxis);
+      var cellule = undefined; 
       
       // Gestion du clique sur la matrice
       function gridOver(d,i){
@@ -178,31 +150,34 @@ path.domain {
         source = villes[0];
         target = villes[1];
         cellule = d;
-        drawHistogram(cellule);
+        drawHistogram();
       };
       
-      // Slider pour l'année
+       // Slider pour l'année
       // Mise à jour de l'histogramme en fonction de sa valeur
       d3.select("#slider").on("input", function() {
-																updateHistogram(+this.value);
+																updateViz(+this.value);
 																});
       
-        function updateHistogram(value) {
+        function updateViz(value) {
 					d3.select('#annee').html(value);
           annee = value;
-          drawHistogram(cellule)
+          drawHistogram();
+          drawMatrice();
 				};
- 
          
        	//Histogramme
         function drawHistogram(){
+           
         // ! \\ annee et trajet à définir via curseur et matrice
         var filtre = edges.filter( function(d) {
             				return ((d.annee == annee)
                              && (d.source == source)
-                             && (d.target == target));
+                             && (d.target == target)
+                           	 && (d.mois != 0));
           					});
-        
+          
+        xAxis = d3.axisBottom(name).tickSize(4);
 				g.selectAll(".bar").remove();
 
           if(filtre.length > 0) {
@@ -211,26 +186,111 @@ path.domain {
               .enter().append("g")
               .attr("class", "bar")
               .attr("transform", function(d) {
-                                  return "translate(" + x(d.mois-1)
-                                  + "," + y(d.weight) + ")"; });
-
+                                  return "translate(" + xScale(d.mois-1)
+                                  + "," + y(d.weight) + ")"; })
+            .on('mousemove', function(d) {
+              	if(d.commentaire != ""){
+                  var mouse = d3.mouse(svg.node()).map(function(d) {
+                  return parseInt(d);
+                  });
+                  tooltip.classed('hidden', false)
+                          .attr('style', 'left:' + (mouse[0] + 15) + 
+                              'px; top:' + (mouse[1] - 35) + 'px')
+                          .html(d.commentaire );
+                }
+          	})
+        		.on('mouseout', function() {
+                    tooltip.classed('hidden', true);
+         		});
+            
             bar.append("rect")
                 .attr("x", 1)
-                .attr("width", x(filtre[0].mois) - x(filtre[0].mois-1) - 1)
+                .attr("width", xScale(filtre[0].mois) - xScale(filtre[0].mois-1) - 1)
                 .attr("height", function(d) { return height - y(d.weight); });
             
             bar.append("text")
                 .attr("dy", ".75em")
                 .attr("y", 6)
-                .attr("x", (x(filtre[0].mois) - x(filtre[0].mois-1)) / 2)
+                .attr("x", (xScale(filtre[0].mois) - xScale(filtre[0].mois-1)) / 2)
                 .attr("text-anchor", "middle")
                 .text(function(d) { return d.weight; });
           }
         };
+      
+      //Matrice
+      function drawMatrice(){
+        
+      xAxis = d3.axisTop(nameScale).tickSize(4);
+      d3.select("svg").select("#adjacencyG").remove();
+        
+      // Filtrer les données
+        
+      //On filtre par années
+    	var edgesFiltered = edges.filter( function(d) {
+            				return (d.annee == annee && d.mois == 0);
+       							});
+      
+      for (x in edgesFiltered) {
+        var id = edgesFiltered[x].source + "-" + edgesFiltered[x].target;
+        edgeHash[id] = edgesFiltered[x];
+      }
+        
+			//d3.select("svg").select("#adjacencyG").remove();
+        
+      matrix = [];
+      //create all possible edges
+      for (a in nodes) {
+        for (b in nodes) {
+          var grid = {id: nodes[a].id + "-" + nodes[b].id, x: b, y: a, weight: 0};
+          if (edgeHash[grid.id]) {
+            grid.weight = edgeHash[grid.id].weight;
+          }
+          matrix.push(grid);
+        }
+      }
+    	
+      //On retire les valeurs undefined
+    	var matrixFiltered =  matrix.filter(function(d) {
+            				return ((!d.id.includes("undefined"))
+                             && (d.x != "columns")
+                             && (d.y != "columns"));
+          					});
+       
+      // dessin
+      d3.select("svg")
+      	.append("g")
+      	.attr("transform", "translate(220,220)")
+      	.attr("id", "adjacencyG")
+      	.selectAll("rect")
+      	.data(matrixFiltered)
+    		.enter()
+      	.append("rect")
+      	.attr("width", 15)
+      	.attr("height", 15)
+      	.attr("x", function (d) {	return d.x*15})
+      	.attr("y", function (d) {return d.y*15})
+      	.style("stroke", "black")
+      	.style("stroke-width", "1px")
+      	.style("fill", "steelblue")
+      	.style("fill-opacity", function (d) {return d.weight*0.04; })
+      	.on("click", gridOver)
+    		.append("svg:title")
+        .text(function(d, i) { return d.weight + " %"; });     
+        
+      
+      d3.select("#adjacencyG").append("g")
+        .call(xAxis)
+      	.selectAll("text")
+        .style("text-anchor", "end")
+        .attr("transform", "translate(-10,-10) rotate(90)");
+
+      d3.select("#adjacencyG").append("g")
+        .call(yAxis);
+      
+      }
         };
     }
 
   </script>
   </footer>
 </body>
- 
