@@ -8,10 +8,6 @@
 <script src="http://d3js.org/queue.v1.min.js" type="text/javascript"></script>
 <script src="histogram-chart.js"></script>
 <style>
-  
-.bar rect {
-  fill: steelblue;
-}
 
 .bar text {
   fill: #fff;
@@ -63,6 +59,9 @@ div.tooltip {
   <input id="slider" type="range" value="2011" min="2011" max="2017" step="1" />
   <span id="annee">2011</span>
 </div>
+  <div>
+    
+  </div>
 <div id="vizcontainer">
   <svg width="1750" height="1000" border="1px lightgray solid" />
 </div>
@@ -72,12 +71,34 @@ div.tooltip {
   
 function visualisation() {
 
+  // début de la tentative de radio bouton
+  var shapeData = ["Triangle", "Circle", "Square", "Rectangle"], 
+    j = 3;  // Choose the rectangle as default
+
+	// Create the shape selectors
+	var form = d3.select("body").append("form");
+
+	var labels = form.selectAll("label")
+    .data(shapeData)
+    .enter()
+    .append("label")
+    .text(function(d) {return d;})
+    .insert("input")
+  	.attr("type", "radio")
+  	.attr("class", "shape")
+  	.attr("name", "mode")
+  	.attr("value", function(d, i) {return i;})
+    .property("checked", function(d, i) {return i===j;});
+  
+   // fin de la tentative de radio bouton
+  
+  
     //Matrice d'adjacence
     queue()
     .defer(d3.csv, "data/index.csv")
     .defer(d3.csv, "data/trajets_tgv.csv")
     .await(function(error, file1, file2) { createAdjacencyMatrix(file1, file2); });
-      
+    
 		function createAdjacencyMatrix(nodes,edges){
 			
 			var annee = 2011, source, target;
@@ -86,10 +107,10 @@ function visualisation() {
 			var tooltip = d3.select('body').append('div')
            					.attr('class', 'hidden tooltip');
       
-      var weightScale = d3.scaleLinear()
-        .domain(d3.extent(function(d){ return d.weight }))
-        .range([0,100]);
-      
+      var weightScale = d3.scaleQuantize()
+        .domain([50, 100])
+        .range(["rgb(162,64,57)", "rgb(184,106,64)", "rgb(184,160,64)",
+         "rgb(142,205,90)", "rgb(73,171,76)"]);
   		var scaleSize = nodes.length*15;
       var nameScale = d3.scaleBand()
       									.domain(nodes.map(function (el) {return el.id}))
@@ -136,7 +157,15 @@ function visualisation() {
         .attr("transform", "translate(20,0)")
         .style("text-anchor", "start") 
         .attr("fill","Black")
-        .text("régularité");  
+        .text("régularité");
+      
+       g.append("text")
+       	.attr("id", "nomTrajet")
+        .attr("x", (width / 2)) 
+        .attr("y", height + 60) 
+        .attr("text-anchor", "middle") 
+        .style("font-size", "22px")
+        .text("");
       
       var cellule = undefined; 
       
@@ -168,7 +197,10 @@ function visualisation() {
          
        	//Histogramme
         function drawHistogram(){
-           
+          
+         g.select("#nomTrajet")
+         	.text(source + " -> " + target);
+          
         // ! \\ annee et trajet à définir via curseur et matrice
         var filtre = edges.filter( function(d) {
             				return ((d.annee == annee)
@@ -203,10 +235,12 @@ function visualisation() {
                     tooltip.classed('hidden', true);
          		});
             
+            
             bar.append("rect")
                 .attr("x", 1)
                 .attr("width", xScale(filtre[0].mois) - xScale(filtre[0].mois-1) - 1)
-                .attr("height", function(d) { return height - y(d.weight); });
+                .attr("height", function(d) { return height - y(d.weight); })
+            		.attr("fill", function (i) {return weightScale(i.weight);});
             
             bar.append("text")
                 .attr("dy", ".75em")
@@ -271,7 +305,7 @@ function visualisation() {
       	.attr("y", function (d) {return d.y*15})
       	.style("stroke", "black")
       	.style("stroke-width", "1px")
-      	.style("fill", "steelblue")
+      	.attr("fill", function (i) {return weightScale(i.weight);})
       	.style("fill-opacity", function (d) {return d.weight*0.04; })
       	.on("click", gridOver)
     		.append("svg:title")
