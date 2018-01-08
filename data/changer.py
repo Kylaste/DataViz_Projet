@@ -32,9 +32,7 @@ with open("regularite-mensuelle-tgv.csv", "r") as fichier:
         for row in moyenne:
             
             info = row.split('-')
-            if ("ANGERS" in row):
-                print (info[0])
-            moyenne[row] =round(float(moyenne[row])/nbMois[id], 2)
+            moyenne[row] =round(float(moyenne[row])/nbMois[row], 2)
             fileWriter.writerow([info[0], info[1], moyenne[row], info[2], 0, ""])
             
 # Intercité: index_villes
