@@ -138,7 +138,7 @@ function visualisation() {
 
         queue()
           .defer(d3.csv, "data/index_intercites.csv")
-          .defer(d3.csv, "data/trajets_intercites.csv")
+          .defer(d3.csv, "data/multiple.csv")
           .await(function(error, file1, file2) { createMatrix(file1, file2); });
       }
   
