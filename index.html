@@ -218,7 +218,7 @@ function visualisation() {
       var nameAnnee = d3.scaleLinear()
                             .domain([2011, 2017])
                             .range([0,width]);
-      console.log(nameAnne(5))
+      console.log(nameAnnee(5))
       xAxis = d3.axisBottom(nameAnnee).tickSize(7).tickFormat(d3.format("d"));
         
         var line = d3.line()
