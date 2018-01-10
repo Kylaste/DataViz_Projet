@@ -219,7 +219,7 @@ function visualisation() {
                             .domain([2011, 2017])
                             .range([0,width]);
       
-      xAxis = d3.axisBottom(nameAnnee).tickSize(2).tickFormat(d3.format("d"));
+      xAxis = d3.axisBottom(nameAnnee).tickSize(4);
         
         var line = d3.line()
         .x(function(d) { return nameAnnee(d.annee); })
