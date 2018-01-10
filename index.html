@@ -72,8 +72,9 @@ p {
   <input id="slider" type="range" value="2011" min="2011" max="2017" step="1" />
   <span id="annee">2011</span>
 </div>
-  <div id="radioButton">
-
+  <div id="radioButtonTypeTrain">
+  </div>
+   <div id="radioButtonMultiple">
   </div>
 <div id="vizcontainer">
   <svg width="1750" height="1000" border="1px lightgray solid" />
@@ -83,12 +84,12 @@ p {
 function visualisation() {
    		var annee = 2011, source, target;
   
-      // Radio Button
+      // Radio Button choix tye train
       var shapeData = ["TGV", "Intercité"], 
         j = 0;  // Choose the TGV as default
 
       // Create the shape selectors
-      var form = d3.select("#radioButton").append("form").attr("id", "radio");
+      var form = d3.select("#radioButtonTypeTrain").append("form").attr("id", "radio");
 
       var labels = form.selectAll("label")
         .data(shapeData)
@@ -96,18 +97,74 @@ function visualisation() {
         .append("label")
         .text(function(d) {return d;})
         .insert("input")
+        .attr("id", "choix")
         .attr("type", "radio")
         .attr("class", "shape")
         .attr("name", "mode")
         .attr("value", function(d, i) {return i;})
         .property("checked", function(d, i) {return i===j;});
 
-    d3.selectAll("label").on("click", function(d,i) {
+    d3.selectAll("#choix").on("click", function(d,i) {
         if(i == 0){
-            tgvData();
+            if(d3.select('input[id="multiple"]:checked').property("value") == 0){
+            
+                tgvData();
+            }
+            else{
+                multipleTGVData();
+                }
         }
         else{
-            interciteData();
+        if(d3.select('input[id="multiple"]:checked').property("value") == 0){
+            
+                interciteData();
+            }
+            else{
+                multipleInterciteData();
+                }
+        }
+    });
+    
+    
+    // Radio Button choix multiple
+      shapeData = ["Simple", "Multiple"];
+      
+    var mult = 0;  // Choose the Simple as default
+
+      // Create the shape selectors
+      form = d3.select("#radioButtonMultiple").append("form").attr("id", "radio");
+
+      labels = form.selectAll("label")
+        .data(shapeData)
+        .enter()
+        .append("label")
+        .text(function(d) {return d;})
+        .insert("input")
+        .attr("id", "multiple")
+        .attr("type", "radio")
+        .attr("class", "shape")
+        .attr("name", "mode")
+        .attr("value", function(d, i) {return i;})
+        .property("checked", function(d, i) {return i===mult;});
+
+    d3.selectAll("#multiple").on("click", function(d,i) {
+       if(d3.select('input[id="choix"]:checked').property("value") == 0){
+            if(i == 0){
+            
+                tgvData();
+            }
+            else{
+                multipleTGVData()
+                }
+        }
+        else{
+            if(i == 0){
+            
+                interciteData();
+            }
+            else{
+                multipleInterciteData()
+                }
         }
     });
   
@@ -118,14 +175,41 @@ function visualisation() {
 
          queue()
           .defer(d3.csv, "data/index.csv")
-          .defer(d3.csv, "data/true_multiple.csv")
+          .defer(d3.csv, "data/trajets_tgv.csv")
           .await(function(error, file1, file2) { createMatrix(file1, file2); });
       }
 
+      function multipleTGVData(){
+           d3.select("#slider").attr("min", "2011");
+           d3.select("#slider").attr("value", annee);
+           d3.select("#annee").html(annee);
+
+         queue()
+          .defer(d3.csv, "data/index.csv")
+          .defer(d3.csv, "data/true_multiple.csv")
+          .await(function(error, file1, file2) { createMatrix(file1, file2); });
+      }
+      
       function interciteData(){
           d3.select("#slider").attr("min", "2014");
 
-         console.log(d3.select("#slider").attr("value"));
+          if( d3.select("#slider").attr("value") == "2011" ||
+               d3.select("#slider").attr("value") =="2012"||
+               d3.select("#slider").attr("value") =="2013"){
+              annee = 2014;
+          }
+
+        d3.select("#slider").attr("value", annee);
+        d3.select("#annee").html(annee);
+
+        queue()
+          .defer(d3.csv, "data/index_intercites.csv")
+          .defer(d3.csv, "data/trajets_intercites.csv")
+          .await(function(error, file1, file2) { createMatrix(file1, file2); });
+      }
+      
+      function multipleInterciteData(){
+            d3.select("#slider").attr("min", "2014");
 
           if( d3.select("#slider").attr("value") == "2011" ||
                d3.select("#slider").attr("value") =="2012"||
@@ -227,7 +311,6 @@ function visualisation() {
 
         return e;
     }).tickValues(d3.range(2011, 2018, 1));
-      console.log(xAxis)  
         var line = d3.line()
         .x(function(d) { return nameAnnee(d.annee); })
         .y(function(d) { return y(d.weight); });
@@ -366,9 +449,16 @@ function visualisation() {
       // Filtrer les données
         
         //On filtre par années
-        var edgesFiltered = edges.filter( function(d) {
-                            return (d.annee == annee );
+        if(d3.select('input[id="multiple"]:checked').property("value") == 1){
+            var edgesFiltered = edges.filter( function(d) {
+                            return (d.annee == annee && d.mois == 1);
                                 });
+        }
+        else{
+            var edgesFiltered = edges.filter( function(d) {
+                            return (d.annee == annee && d.mois == 0);
+                                });
+        }
       
       for (x in edgesFiltered) {
         var id = edgesFiltered[x].source + "-" + edgesFiltered[x].target;
@@ -433,14 +523,4 @@ function visualisation() {
         };
 }
   </script>
-<!--  <script>
-    function start_scroll_down() { 
-        scroll = setInterval(function(){ window.scrollBy(0, 1000); console.log('start');}, 1500);
-    }
- 
-    function stop_scroll_down() {
-        clearInterval(scroll);
-        console.log('stop');
-    }
-</script> -->
 </body>
