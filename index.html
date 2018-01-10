@@ -118,7 +118,7 @@ function visualisation() {
 
          queue()
           .defer(d3.csv, "data/index.csv")
-          .defer(d3.csv, "data/trajets_tgv.csv")
+          .defer(d3.csv, "data/true_multiple.csv")
           .await(function(error, file1, file2) { createMatrix(file1, file2); });
       }
 
@@ -367,7 +367,7 @@ function visualisation() {
         
         //On filtre par années
         var edgesFiltered = edges.filter( function(d) {
-                            return (d.annee == annee && d.mois == 0);
+                            return (d.annee == annee );
                                 });
       
       for (x in edgesFiltered) {
