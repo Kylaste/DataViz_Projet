@@ -216,8 +216,8 @@ function visualisation() {
       
       // Line Chart
       var nameAnnee = d3.scaleLinear()
-                            .domain([2011, 2017])
-                            .range([0,width]);
+                            .domain([2011, 2017]);
+                            //.range([0,width]);
       
       xAxis = d3.axisBottom(nameAnnee).tickSize(8).tickFormat(d3.format("d"));;
         
