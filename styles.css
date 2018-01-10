@@ -1,4 +1,12 @@
 #body {
     width: 1200px;
     margin: 0 auto;
+    background-color:beige;
 }
+
+#h1 {
+    color:black;
+    background-color:lightblue;    
+}
+
+
