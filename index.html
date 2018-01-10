@@ -215,7 +215,7 @@ function visualisation() {
         .text("");
       
       // Line Chart
-      var nameAnnee = d3.scaleTime()
+      var nameAnnee = d3.scaleLinear()
                             .domain([2011, 2017])
                             .range([0,width]);
       
