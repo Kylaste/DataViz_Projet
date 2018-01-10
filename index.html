@@ -226,7 +226,7 @@ function visualisation() {
         }
 
         return e;
-    });
+    }).tickValues(d3.range(0, 7, 1));
       console.log(xAxis)  
         var line = d3.line()
         .x(function(d) { return nameAnnee(d.annee); })
